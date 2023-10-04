@@ -1,6 +1,9 @@
 const path = require("path");
 
 const { DefinePlugin } = require("webpack");
+const {
+  WebpackEnvRepleacePlugin
+} = require("./lib/plugin/WebpackEnvRepleacePlugin");
 
 module.exports = {
   // JavaScript 执行入口文件
@@ -23,6 +26,7 @@ module.exports = {
   plugins: [
     new DefinePlugin({
       "process.env.ID": "'cjfff'"
-    })
+    }),
+    new WebpackEnvRepleacePlugin()
   ]
 };

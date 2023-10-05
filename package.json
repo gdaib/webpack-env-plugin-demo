@@ -7,9 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "webpack --config webpack.config.js",
     "build": "tsc --lib es6 ./plugin/WebpackEnvRepleacePlugin/index.ts --outDir lib/plugin/WebpackEnvRepleacePlugin",
-    "dev:build-lib": "yarn build",
-    "dev:broswer": "npx http-server -o ./dist -p 9898",
     "dev:build": "yarn start",
+    "dev:build-lib": "yarn build",
+    "dev:broswer": "npx http-server ./dist -p 9999 -o",
     "compile": "concurrently -c auto -P \"yarn:dev:* {1}\" --",
     "dev": "yarn compile --watch"
   },

@@ -7,14 +7,22 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "webpack --config webpack.config.js",
     "build": "tsc --lib es6 ./plugin/WebpackEnvRepleacePlugin/index.ts --outDir lib/plugin/WebpackEnvRepleacePlugin",
-    "build:w": "yarn build -w"
+    "dev:build-lib": "yarn build",
+    "dev:broswer": "npx http-server -o ./dist -p 9898",
+    "dev:build": "yarn start",
+    "compile": "concurrently -c auto -P \"yarn:dev:* {1}\" --",
+    "dev": "yarn compile --watch"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/webpack": "^5.28.3",
+    "concurrently": "^8.2.1",
+    "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
     "dotenv": "^16.3.1",
+    "http-server": "^14.1.1",
+    "live-server": "^1.2.2",
     "style-loader": "^3.3.3",
     "tslib": "^2.6.2",
     "typescript": "^5.2.2",

@@ -25,8 +25,9 @@ module.exports = {
   },
   plugins: [
     new DefinePlugin({
-      "process.env.ID": "'cjfff'"
+      "process.env.ID2": "'cjfff2'"
     }),
+
     new WebpackEnvRepleacePlugin()
   ]
 };

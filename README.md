@@ -1,4 +1,11 @@
-# Webpack 学习
+# webpack-env-plugin-demo
 
-## 处理 CSS
-style-loader css-loader
+## run
+
+```shell
+yarn
+
+yarn dev
+```
+
+Then you can see the dis/html file or open broswer with the link http://localhost:9999 to see the result.

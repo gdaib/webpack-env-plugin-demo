@@ -1,4 +1,9 @@
-# Webpack 学习
+# webpack-env-plugin-demo
 
-## 处理 CSS
-style-loader css-loader
+## run
+
+```shell
+yarn
+
+yarn build && yarn start
+```

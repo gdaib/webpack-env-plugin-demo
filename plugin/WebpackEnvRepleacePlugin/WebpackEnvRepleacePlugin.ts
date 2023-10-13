@@ -1,13 +1,22 @@
 import * as dotenv from "dotenv";
 import * as path from "path";
+import * as fs from "fs";
 import type { Compiler } from "webpack";
 import { DefinePlugin } from "webpack";
 import * as kebabcase from "lodash.kebabcase";
+import { parse } from "node-html-parser";
+import * as chalk from "chalk";
 
 const ObjectKey = "window?.config";
 
+const CONFIG_TAG_ID = "__config__tag__id__";
+
 const templateStr = (key: string, value: string) => {
   return `(${ObjectKey}?.${key} || '${value}')`;
+};
+
+const createObjectTemplete = (value: object) => {
+  return `;(() => {window.config = ${JSON.stringify(value)}})()`;
 };
 
 export class WebpackEnvRepleacePlugin {
@@ -24,9 +33,50 @@ export class WebpackEnvRepleacePlugin {
     new DefinePlugin(definitions).apply(compiler);
   }
 
+  public applyConfiguration(compiler: Compiler) {
+    const { envs } = this.gatherEnvs(compiler);
+    const { ReplaceSource } = compiler.webpack.sources;
+
+    // this solution from https://stackoverflow.com/questions/67365277/how-to-modify-webpack-5-main-template-with-plugin
+    compiler.hooks.compilation.tap(this.pluginName, (compilation) => {
+      compilation.hooks.afterOptimizeAssets.tap(
+        {
+          name: this.pluginName,
+          stage: compiler.webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONS
+        },
+        async (assets) => {
+          const entryHtmls = Object.keys(assets).filter((item) =>
+            item.endsWith(".html")
+          );
+
+          await entryHtmls.map((name) => {
+            const oldSource = assets[name];
+            const newSource = new ReplaceSource(oldSource, this.pluginName);
+            
+            const oldContent = oldSource.source().toString();
+
+            newSource.replace(
+              0,
+              oldContent.length,
+              this.injectContent(oldContent, envs),
+              this.pluginName
+            );
+
+            return compilation.updateAsset(name, newSource);
+          });
+        }
+      );
+    });
+
+    compiler.hooks.afterDone.tap(this.pluginName, () => {
+      this.logger.info(chalk.green(`${this.pluginName} initialized successfully.`))
+    })
+  }
+
   public apply(compiler: Compiler) {
     this.init(compiler);
     this.applyReplace(compiler);
+    this.applyConfiguration(compiler);
   }
 
   loadEnvFile({ path }: { path: string }) {
@@ -64,5 +114,21 @@ export class WebpackEnvRepleacePlugin {
 
   init(compiler: Compiler) {
     this.logger = compiler.getInfrastructureLogger(this.pluginName);
+  }
+
+  injectContent(content: string, variables: Record<string, any>) {
+    const root = parse(content);
+    const [head] = root.getElementsByTagName("head");
+
+    // remove the old one
+    const configScript = head.getElementById(CONFIG_TAG_ID);
+    if (configScript) {
+      head.removeChild(configScript);
+    }
+
+    head.innerHTML = `<script id="${CONFIG_TAG_ID}">${createObjectTemplete(
+      variables
+    )}</script>${head.innerHTML}`;
+    return root.innerHTML;
   }
 }

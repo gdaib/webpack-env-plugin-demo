@@ -1,10 +1,10 @@
 const path = require("path");
 
-const { DefinePlugin } = require("webpack");
+const { DefinePlugin, ProgressPlugin } = require("webpack");
 const {
   WebpackEnvRepleacePlugin
 } = require("./lib/plugin/WebpackEnvRepleacePlugin");
-const CopyPlugin = require("copy-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 const distPath = path.resolve(__dirname, "./dist");
 
@@ -23,20 +23,26 @@ module.exports = {
     ]
   },
   plugins: [
+    new ProgressPlugin(),
+
     new DefinePlugin({
       "process.env.ID2": "'cjfff2'"
     }),
 
-    new WebpackEnvRepleacePlugin(),
+    new HtmlWebpackPlugin({
+      template: "./public/index.html",
+      inject: "body",
+      minify: {
+        removeComments: false,
+        removeRedundantAttributes: true,
+        removeScriptTypeAttributes: true,
+        removeStyleLinkTypeAttributes: true,
+        useShortDoctype: true,
+        collapseWhitespace: true,
+        keepClosingSlash: true
+      }
+    }),
 
-    new CopyPlugin({
-      patterns: [
-        {
-          context: path.join(__dirname, "public"),
-          from: "**/*",
-          to: distPath
-        }
-      ]
-    })
+    new WebpackEnvRepleacePlugin()
   ]
 };

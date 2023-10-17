@@ -7,6 +7,8 @@ import * as kebabcase from "lodash.kebabcase";
 import { parse } from "node-html-parser";
 import * as chalk from "chalk";
 
+const pathResole = path.resolve
+
 const ObjectKey = "window?.config";
 
 const CONFIG_TAG_ID = "__config__tag__id__";
@@ -19,18 +21,87 @@ const createObjectTemplete = (value: object) => {
   return `;(() => {window.config = ${JSON.stringify(value)}})()`;
 };
 
+interface IWebpackEnvRepleacePluginOption {
+  dotenvDir: string
+}
+
+const defaultOptions = {
+  dotenvDir: 'dotenv'
+}
+
 export class WebpackEnvRepleacePlugin {
   protected logger: ReturnType<Compiler["getInfrastructureLogger"]>;
+  private dotenvDir: string
+
+  constructor(options: IWebpackEnvRepleacePluginOption) {
+    const finalOptions = Object.assign({}, defaultOptions, options)
+    this.dotenvDir = finalOptions.dotenvDir
+  }
 
   get pluginName() {
     return kebabcase(Object.getPrototypeOf(this).constructor?.name);
   }
+  
 
   public applyReplace(compiler: Compiler) {
     const { envs } = this.gatherEnvs(compiler);
     const { definitions } = this.formateData(envs);
 
     new DefinePlugin(definitions).apply(compiler);
+  }
+
+  public getEnvs() {
+    const sourcePath = path.resolve(process.cwd(), this.dotenvDir)
+
+    if (!fs.existsSync(sourcePath)) {
+      this.logger.error(`copy dotenv configuration file failed, because the provider path doesn't existed ${sourcePath}`)
+      return
+    }
+
+    const dirs = fs.readdirSync(sourcePath)
+
+    const files = dirs.map(name => {
+      const finalPath = path.resolve(sourcePath, name)
+      const content = fs.readFileSync(finalPath, 'utf-8')
+
+      return {
+        name,
+        content
+      }
+    })
+
+    return {
+      files,
+    }
+  }
+
+  public handleConfiguration(compiler: Compiler) {
+    const { RawSource } = compiler.webpack.sources;
+
+    compiler.hooks.compilation.tap(this.pluginName, (compilation) => {
+      compilation.hooks.afterOptimizeAssets.tap(
+        {
+          name: this.pluginName,
+          stage: compiler.webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONS
+        },
+        async (assets) => {
+
+          const {files} = this.getEnvs()
+          if (files.length) {
+            files.forEach(({content, name}) => {
+              const finalPath = path.join(defaultOptions.dotenvDir, name)
+              compilation.emitAsset(finalPath, new RawSource(content, false))
+            })
+          }
+        }
+      );
+    });
+
+    compiler.hooks.afterDone.tap(this.pluginName, () => {
+      this.logger.info(
+        chalk.green(`${this.pluginName} initialized successfully.`)
+      );
+    });
   }
 
   public applyConfiguration(compiler: Compiler) {
@@ -52,7 +123,7 @@ export class WebpackEnvRepleacePlugin {
           await entryHtmls.map((name) => {
             const oldSource = assets[name];
             const newSource = new ReplaceSource(oldSource, this.pluginName);
-            
+
             const oldContent = oldSource.source().toString();
 
             newSource.replace(
@@ -69,14 +140,17 @@ export class WebpackEnvRepleacePlugin {
     });
 
     compiler.hooks.afterDone.tap(this.pluginName, () => {
-      this.logger.info(chalk.green(`${this.pluginName} initialized successfully.`))
-    })
+      this.logger.info(
+        chalk.green(`${this.pluginName} initialized successfully.`)
+      );
+    });
   }
 
   public apply(compiler: Compiler) {
     this.init(compiler);
     this.applyReplace(compiler);
-    this.applyConfiguration(compiler);
+    // this.applyConfiguration(compiler);
+    this.handleConfiguration(compiler)
   }
 
   loadEnvFile({ path }: { path: string }) {

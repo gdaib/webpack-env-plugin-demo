@@ -7,7 +7,12 @@ import * as kebabcase from "lodash.kebabcase";
 import { parse } from "node-html-parser";
 import * as chalk from "chalk";
 
-const pathResole = path.resolve
+
+const outputConfig = {
+  files: [],
+} as {
+  files: string[]
+}
 
 const ObjectKey = "window?.config";
 
@@ -42,7 +47,6 @@ export class WebpackEnvRepleacePlugin {
     return kebabcase(Object.getPrototypeOf(this).constructor?.name);
   }
   
-
   public applyReplace(compiler: Compiler) {
     const { envs } = this.gatherEnvs(compiler);
     const { definitions } = this.formateData(envs);
@@ -85,7 +89,12 @@ export class WebpackEnvRepleacePlugin {
           stage: compiler.webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONS
         },
         async (assets) => {
-
+          const entryHtmls = Object.keys(assets).filter((item) =>
+            item.endsWith(".html")
+          );
+          outputConfig.entries = entryHtmls.map(name => {
+            
+          })
           const {files} = this.getEnvs()
           if (files.length) {
             files.forEach(({content, name}) => {

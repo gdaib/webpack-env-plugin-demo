@@ -16,7 +16,7 @@ const error = (content: string) => {
   console.log(chalk.green('[switch-cli]:'),chalk.redBright(content));
 };
 
-const findPath = (fileName: string) => path.join(__dirname, '../../', fileName)
+export const findPath = (fileName: string) => path.join(__dirname, fileName)
 
 export function switchEnv(env: string) {
   const variables = readEnv(env)

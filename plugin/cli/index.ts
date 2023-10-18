@@ -1,6 +1,7 @@
 import { program } from 'commander'
 
 import './commands/switch-env'
+import './commands/install'
 export * from './commands/switch-env'
 
 const name = 'replace-env-cli'
